@@ -12,7 +12,17 @@ import { existsSync } from "fs";
 import type { AppConfig } from "../../../../types/config.d.ts";
 import { getSystemTrayModule } from "./SystemTrayModule.js";
 import sharp from "sharp";
-import clipboardEx from "electron-clipboard-ex";
+
+// electron-clipboard-ex is optional (only supports Windows/macOS)
+// Lazy load để tránh lỗi khi không có trên Linux
+async function getClipboardEx() {
+  try {
+    return await import("electron-clipboard-ex");
+  } catch (e) {
+    // Ignore if not available (e.g., on Linux)
+    return null;
+  }
+}
 
 /**
  * Module xử lý IPC communication giữa Renderer và Main process.
@@ -240,7 +250,12 @@ class IPCHandlersModule implements AppModule {
             if (process.platform === "win32" || process.platform === "darwin") {
               // Windows và macOS: Sử dụng electron-clipboard-ex để copy file
               // Thư viện này hỗ trợ CF_HDROP trên Windows và file paths trên macOS
-              clipboardEx.writeFilePaths([normalizedPath]);
+              const clipboardExModule = await getClipboardEx();
+              if (clipboardExModule) {
+                clipboardExModule.writeFilePaths([normalizedPath]);
+              } else {
+                throw new Error("electron-clipboard-ex not available");
+              }
 
               // Đợi một chút để đảm bảo clipboard được set
               await new Promise((resolve) => setTimeout(resolve, 50));

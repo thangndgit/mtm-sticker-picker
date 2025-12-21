@@ -12,10 +12,10 @@ export default /** @type import('electron-builder').Configuration */
   },
   // Icon configuration - sử dụng icon từ folder icons
   mac: {
-    icon: 'icons/apple-icon-180x180.png', // Electron-builder sẽ tự động tạo .icns từ PNG
+    icon: 'icons/app-icon-512x512.png', // 512x512 cho macOS
   },
   win: {
-    icon: 'icons/favicon.ico', // Hoặc có thể dùng .ico trực tiếp
+    icon: 'icons/app-icon-256x256.png', // 256x256 cho Windows (electron-builder sẽ convert sang .ico)
   },
   linux: {
     icon: 'icons/android-icon-192x192.png', // PNG cho Linux
