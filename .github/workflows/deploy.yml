@@ -37,6 +37,22 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - run: gh release create v${{inputs.app-version}} dist/root* dist/latest*.yml --repo ${{github.repository}}
+      - name: List downloaded files
+        run: find dist -type f | head -20
+
+      - name: Create GitHub Release
+        run: |
+          # Tìm tất cả files cần thiết
+          FILES=$(find dist -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.yml" -o -name "*.sig" \) | tr '\n' ' ')
+          
+          if [ -z "$FILES" ]; then
+            echo "No files found to release"
+            exit 1
+          fi
+          
+          gh release create v${{inputs.app-version}} $FILES \
+            --repo ${{github.repository}} \
+            --title "v${{inputs.app-version}}" \
+            --notes "Release v${{inputs.app-version}}"
         env:
           GH_TOKEN: ${{ github.token }}

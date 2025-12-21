@@ -35,10 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/init-template-with-renderer
-        name: Setup boilerplate
+      - uses: actions/setup-node@v4
         with:
-          renderer-template: ${{inputs.renderer-template}}
+          node-version: 'latest'
+      - name: Install Dependencies
+        run: npm ci
       - run: npm run typecheck --if-present
 
   compile:
@@ -52,11 +53,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/init-template-with-renderer
-        name: Setup boilerplate
+      - uses: actions/setup-node@v4
         with:
-          renderer-template: ${{inputs.renderer-template}}
-
+          node-version: 'latest'
+      - name: Install Dependencies
+        run: npm ci
       - run: npm version "${{inputs.app-version}}" --no-git-tag-version
       - run: npm run compile -- -p never
         env:
