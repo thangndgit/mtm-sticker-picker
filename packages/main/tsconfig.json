@@ -15,6 +15,6 @@
       "@app/renderer": ["../renderer"]
     }
   },
-  "include": ["src/**/*.ts", "../../types/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "../../types/**/*.d.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]
 }
