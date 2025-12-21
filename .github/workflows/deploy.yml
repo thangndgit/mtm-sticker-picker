@@ -48,33 +48,36 @@ jobs:
         run: |
           # Chỉ tìm files ở root level của dist (không tìm sâu vào app bundles)
           # Tìm các installer files và update files
+          # Sử dụng while read để handle filenames có khoảng trắng
           RELEASE_FILES=()
           
           # Windows: .exe installer
-          if ls dist/*.exe 1> /dev/null 2>&1; then
-            RELEASE_FILES+=($(ls dist/*.exe))
-          fi
+          while IFS= read -r -d '' file; do
+            RELEASE_FILES+=("$file")
+          done < <(find dist -maxdepth 1 -name "*.exe" -type f -print0)
           
           # macOS: .dmg
-          if ls dist/*.dmg 1> /dev/null 2>&1; then
-            RELEASE_FILES+=($(ls dist/*.dmg))
-          fi
+          while IFS= read -r -d '' file; do
+            RELEASE_FILES+=("$file")
+          done < <(find dist -maxdepth 1 -name "*.dmg" -type f -print0)
           
           # Linux: .deb, .AppImage
-          if ls dist/*.deb 1> /dev/null 2>&1; then
-            RELEASE_FILES+=($(ls dist/*.deb))
-          fi
-          if ls dist/*.AppImage 1> /dev/null 2>&1; then
-            RELEASE_FILES+=($(ls dist/*.AppImage))
-          fi
+          while IFS= read -r -d '' file; do
+            RELEASE_FILES+=("$file")
+          done < <(find dist -maxdepth 1 -name "*.deb" -type f -print0)
+          
+          while IFS= read -r -d '' file; do
+            RELEASE_FILES+=("$file")
+          done < <(find dist -maxdepth 1 -name "*.AppImage" -type f -print0)
           
           # Update files: .yml, .sig
-          if ls dist/*.yml 1> /dev/null 2>&1; then
-            RELEASE_FILES+=($(ls dist/*.yml))
-          fi
-          if ls dist/*.sig 1> /dev/null 2>&1; then
-            RELEASE_FILES+=($(ls dist/*.sig))
-          fi
+          while IFS= read -r -d '' file; do
+            RELEASE_FILES+=("$file")
+          done < <(find dist -maxdepth 1 -name "*.yml" -type f -print0)
+          
+          while IFS= read -r -d '' file; do
+            RELEASE_FILES+=("$file")
+          done < <(find dist -maxdepth 1 -name "*.sig" -type f -print0)
           
           if [ ${#RELEASE_FILES[@]} -eq 0 ]; then
             echo "No release files found!"
@@ -86,6 +89,7 @@ jobs:
           echo "Found ${#RELEASE_FILES[@]} files to upload:"
           printf '%s\n' "${RELEASE_FILES[@]}"
           
+          # Pass files với quotes để handle spaces trong filenames
           gh release create v${{inputs.app-version}} "${RELEASE_FILES[@]}" \
             --repo ${{github.repository}} \
             --title "v${{inputs.app-version}}" \
