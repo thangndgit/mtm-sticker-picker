@@ -15,8 +15,11 @@ import sharp from "sharp";
 
 // electron-clipboard-ex is optional (only supports Windows/macOS)
 // Lazy load để tránh lỗi khi không có trên Linux
-async function getClipboardEx() {
+async function getClipboardEx(): Promise<
+  typeof import("electron-clipboard-ex") | null
+> {
   try {
+    // @ts-ignore - electron-clipboard-ex is optional dependency
     return await import("electron-clipboard-ex");
   } catch (e) {
     // Ignore if not available (e.g., on Linux)

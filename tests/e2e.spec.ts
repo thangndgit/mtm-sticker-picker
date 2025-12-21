@@ -18,16 +18,38 @@ const test = base.extend<TestFixtures>({
   electronApp: [
     async ({}, use) => {
       /**
-       * Executable path depends on root package name!
+       * Executable path depends on productName from electron-builder config
+       * ProductName: "Matitmui Sticker Picker"
        */
-      let executablePattern = "dist/*/root{,.*}";
-      if (platform === "darwin") {
-        executablePattern += "/Contents/*/root";
+      let executablePattern: string;
+      if (platform === "win32") {
+        executablePattern = "dist/win-unpacked/*Sticker*.exe";
+      } else if (platform === "darwin") {
+        executablePattern =
+          "dist/mac-*/Matitmui Sticker Picker.app/Contents/MacOS/Matitmui Sticker Picker";
+      } else {
+        // Linux
+        executablePattern = "dist/linux-unpacked/*sticker*";
       }
 
-      const [executablePath] = globSync(executablePattern);
+      let executablePath = globSync(executablePattern)[0];
       if (!executablePath) {
-        throw new Error("App Executable path not found");
+        // Fallback: try to find any executable in dist
+        const fallbackPattern =
+          platform === "win32"
+            ? "dist/**/*.exe"
+            : platform === "darwin"
+            ? "dist/**/Matitmui Sticker Picker"
+            : "dist/**/*";
+        const fallback = globSync(fallbackPattern);
+        if (fallback.length > 0) {
+          // Use first found executable
+          executablePath = fallback[0];
+        } else {
+          throw new Error(
+            `App Executable path not found. Tried: ${executablePattern}`
+          );
+        }
       }
 
       const electronApp = await electron.launch({

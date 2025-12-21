@@ -21,6 +21,11 @@ export default /**
       output: {
         entryFileNames: '[name].js',
       },
+      external: [
+        // electron-clipboard-ex is optional (only supports Windows/macOS)
+        // Externalize để tránh lỗi build trên Linux
+        'electron-clipboard-ex',
+      ],
     },
     emptyOutDir: true,
     reportCompressedSize: false,

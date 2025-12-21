@@ -1,7 +1,7 @@
 import { sha256sum } from "./nodeCrypto.js";
 import { versions } from "./versions.js";
 import { ipcRenderer } from "electron";
-import type { StickerPack } from "../../../types/sticker.d.ts";
+import type { StickerPack, StickerItem } from "../../../types/sticker.d.ts";
 
 function send(channel: string, message: string) {
   return ipcRenderer.invoke(channel, message);
