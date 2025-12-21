@@ -67,6 +67,16 @@ class SystemTrayModule implements AppModule {
         this.#tray = null;
       }
     });
+
+    // Trong dev mode: Tự động mở Settings window để dễ debug
+    if (import.meta.env.DEV) {
+      app.once("ready", () => {
+        // Đợi một chút để đảm bảo tất cả modules đã được init
+        setTimeout(() => {
+          this.openSettingsWindow();
+        }, 500);
+      });
+    }
   }
 
   /**

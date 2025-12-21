@@ -504,9 +504,19 @@ function Picker() {
       <div className="picker-header">
         <div className="picker-header-title">
           <img
-            src="/icons/favicon-32x32.png"
+            src={`${window.location.origin}/icons/favicon-32x32.png`}
             alt="App Logo"
             className="picker-logo"
+            onError={(e) => {
+              // Fallback: thử dùng favicon.ico nếu PNG không load được
+              const img = e.target as HTMLImageElement;
+              if (img.src.includes("favicon-32x32.png")) {
+                img.src = `${window.location.origin}/icons/favicon.ico`;
+              } else {
+                // Nếu cả 2 đều fail, ẩn icon
+                img.style.display = "none";
+              }
+            }}
           />
           <h2>Matitmui Sticker Picker</h2>
         </div>
