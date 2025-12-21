@@ -5,11 +5,28 @@ import {pathToFileURL} from 'node:url';
 
 export default /** @type import('electron-builder').Configuration */
 ({
+  productName: 'Matitmui Sticker Picker',
   directories: {
     output: 'dist',
     buildResources: 'buildResources',
   },
+  // Icon configuration - sử dụng icon từ folder icons
+  mac: {
+    icon: 'icons/apple-icon-180x180.png', // Electron-builder sẽ tự động tạo .icns từ PNG
+  },
+  win: {
+    icon: 'icons/favicon.ico', // Hoặc có thể dùng .ico trực tiếp
+  },
+  linux: {
+    icon: 'icons/android-icon-192x192.png', // PNG cho Linux
+  },
   generateUpdatesFilesForAllChannels: true,
+  // Publish configuration - GitHub Releases
+  publish: {
+    provider: 'github',
+    owner: 'thangndgit',
+    repo: 'mtm-sticker-picker',
+  },
   linux: {
     target: ['deb'],
   },
@@ -23,6 +40,19 @@ export default /** @type import('electron-builder').Configuration */
     pkg.main,
     '!node_modules/@app/**',
     ...await getListOfFilesFromEachWorkspace(),
+  ],
+  // Thêm sticker_data và icons vào extraResources
+  extraResources: [
+    {
+      from: 'sticker_data',
+      to: 'sticker_data',
+      filter: ['**/*'],
+    },
+    {
+      from: 'icons',
+      to: 'icons',
+      filter: ['**/*'],
+    },
   ],
 });
 

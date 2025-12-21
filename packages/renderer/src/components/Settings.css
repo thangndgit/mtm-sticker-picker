@@ -1,0 +1,546 @@
+/* CSS Variables cho Theme */
+:root {
+  /* Light theme (default) */
+  --settings-bg: #ffffff;
+  --settings-header-bg: #f8f9fa;
+  --settings-border: #e0e0e0;
+  --settings-text-primary: #333;
+  --settings-text-secondary: #666;
+  --settings-text-tertiary: #999;
+  --settings-item-bg: transparent;
+  --settings-item-bg-hover: rgba(0, 0, 0, 0.05);
+  --settings-control-hover: rgba(0, 0, 0, 0.1);
+  --settings-input-bg: #ffffff;
+  --settings-input-border: #d0d0d0;
+  --settings-pack-bg: #f9f9f9;
+  --settings-pack-border: #e0e0e0;
+  --settings-divider: #e0e0e0;
+}
+
+.settings-container[data-theme="dark"] {
+  --settings-bg: #1e1e1e;
+  --settings-header-bg: #252525;
+  --settings-border: #404040;
+  --settings-text-primary: #e0e0e0;
+  --settings-text-secondary: #b0b0b0;
+  --settings-text-tertiary: #888;
+  --settings-item-bg: transparent;
+  --settings-item-bg-hover: rgba(255, 255, 255, 0.05);
+  --settings-control-hover: rgba(255, 255, 255, 0.1);
+  --settings-input-bg: #2d2d2d;
+  --settings-input-border: #505050;
+  --settings-pack-bg: #252525;
+  --settings-pack-border: #404040;
+  --settings-divider: #404040;
+}
+
+/* System theme sử dụng prefers-color-scheme media query ở dưới */
+
+@media (prefers-color-scheme: dark) {
+  .settings-container[data-theme="system"] {
+    --settings-bg: #1e1e1e;
+    --settings-header-bg: #252525;
+    --settings-border: #404040;
+    --settings-text-primary: #e0e0e0;
+    --settings-text-secondary: #b0b0b0;
+    --settings-text-tertiary: #888;
+    --settings-item-bg: transparent;
+    --settings-item-bg-hover: rgba(255, 255, 255, 0.05);
+    --settings-control-hover: rgba(255, 255, 255, 0.1);
+    --settings-input-bg: #2d2d2d;
+    --settings-input-border: #505050;
+    --settings-pack-bg: #252525;
+    --settings-pack-border: #404040;
+    --settings-divider: #404040;
+  }
+}
+
+.settings-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--settings-bg);
+  overflow: hidden;
+}
+
+/* Header với tên app */
+.settings-header {
+  background: var(--settings-header-bg);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.settings-app-banner {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 800 / 262; /* Tỷ lệ kích thước ảnh gốc */
+  background-image: url("/mtm_banner.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.settings-app-banner:hover {
+  opacity: 0.8;
+}
+
+.settings-app-banner:active {
+  opacity: 0.6;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--settings-divider);
+  margin-top: 16px;
+}
+
+/* Content */
+.settings-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  min-height: 0; /* Cho phép shrink và scroll */
+  /* Custom scrollbar - ẩn mặc định, chỉ hiện khi hover */
+  scrollbar-width: none; /* Firefox - ẩn mặc định */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Firefox: Hiện scrollbar khi hover */
+.settings-content:hover {
+  padding-right: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* Firefox - light theme default */
+}
+
+/* Dark theme Firefox scrollbar */
+.settings-container[data-theme="dark"] .settings-content:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox */
+}
+
+/* System theme Firefox scrollbar */
+@media (prefers-color-scheme: dark) {
+  .settings-container[data-theme="system"] .settings-content:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox */
+  }
+}
+
+/* Webkit scrollbar - ẩn mặc định, hiện khi hover, thin, match theme */
+.settings-content::-webkit-scrollbar {
+  width: 6px; /* Thin scrollbar */
+  background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3); /* Light theme default */
+  border-radius: 3px;
+  transition: opacity 0.2s ease;
+  opacity: 0; /* Ẩn mặc định */
+}
+
+.settings-content:hover::-webkit-scrollbar-thumb {
+  opacity: 1; /* Hiện khi hover */
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* Dark theme webkit scrollbar */
+.settings-container[data-theme="dark"]
+  .settings-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.settings-container[data-theme="dark"]
+  .settings-content:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
+}
+
+.settings-container[data-theme="dark"]
+  .settings-content::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* System theme webkit scrollbar */
+@media (prefers-color-scheme: dark) {
+  .settings-container[data-theme="system"]
+    .settings-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .settings-container[data-theme="system"]
+    .settings-content:hover::-webkit-scrollbar-thumb {
+    opacity: 1;
+  }
+
+  .settings-container[data-theme="system"]
+    .settings-content::-webkit-scrollbar-thumb:hover {
+    opacity: 0.8;
+  }
+}
+
+/* Section */
+.settings-section {
+  margin-bottom: 32px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section-divider {
+  height: 1px;
+  background: var(--settings-divider);
+  margin: 24px 0;
+}
+
+.settings-section-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--settings-text-primary);
+}
+
+/* Settings Item */
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--settings-border);
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item label {
+  font-size: 14px;
+  color: var(--settings-text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.settings-value {
+  font-size: 14px;
+  color: var(--settings-text-primary);
+  text-align: right;
+}
+
+.settings-powered-by {
+  font-size: 12px;
+  color: var(--settings-text-secondary);
+  font-style: italic;
+}
+
+/* Select */
+.settings-select {
+  padding: 6px 10px;
+  border: 1px solid var(--settings-input-border);
+  border-radius: 4px;
+  background: var(--settings-input-bg);
+  color: var(--settings-text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.3L159.3%2C69.7c-4.7-4.7-12.3-4.7-17%2C0L5.4%2C197.3c-4.7%2C4.7-4.7%2C12.3%2C0%2C17l19.7%2C19.7c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l108.6-108.6l108.6%2C108.6c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l19.7-19.7C291.7%2C209.5%2C291.7%2C202%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+}
+
+.settings-container[data-theme="dark"] .settings-select {
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2C197.3L159.3%2C69.7c-4.7-4.7-12.3-4.7-17%2C0L5.4%2C197.3c-4.7%2C4.7-4.7%2C12.3%2C0%2C17l19.7%2C19.7c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l108.6-108.6l108.6%2C108.6c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l19.7-19.7C291.7%2C209.5%2C291.7%2C202%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E");
+}
+
+.settings-select:hover {
+  border-color: var(--settings-text-secondary);
+}
+
+.settings-select:focus {
+  border-color: #4682c8;
+  box-shadow: 0 0 0 2px rgba(70, 130, 200, 0.2);
+}
+
+/* Checkbox */
+.settings-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #4682c8;
+}
+
+/* Number Input */
+.settings-number-input {
+  padding: 6px 12px;
+  border: 1px solid var(--settings-input-border);
+  border-radius: 4px;
+  background: var(--settings-input-bg);
+  color: var(--settings-text-primary);
+  font-size: 14px;
+  width: 100px;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+.settings-number-input:hover {
+  border-color: var(--settings-text-secondary);
+}
+
+.settings-number-input:focus {
+  outline: none;
+  border-color: #4682c8;
+  box-shadow: 0 0 0 2px rgba(70, 130, 200, 0.2);
+}
+
+/* Save Bar (Sticky) */
+.settings-save-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: var(--settings-bg);
+  border-top: 2px solid var(--settings-border);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.settings-save-btn {
+  padding: 10px 24px;
+  background: #4682c8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  min-width: 120px;
+}
+
+.settings-save-btn:hover:not(:disabled) {
+  background: #3a6fa5;
+  transform: translateY(-1px);
+}
+
+.settings-save-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.settings-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-discard-btn {
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--settings-text-secondary);
+  border: 1px solid var(--settings-input-border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.settings-discard-btn:hover:not(:disabled) {
+  background: var(--settings-item-bg-hover);
+  border-color: var(--settings-text-secondary);
+  color: var(--settings-text-primary);
+  transform: translateY(-1px);
+}
+
+.settings-discard-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.settings-discard-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* KBD */
+.settings-kbd {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--settings-pack-bg);
+  border: 1px solid var(--settings-input-border);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--settings-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Pack List */
+.settings-pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-pack-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--settings-pack-bg);
+  border: 1px solid var(--settings-pack-border);
+  border-radius: 8px;
+  transition: all 0.2s;
+  cursor: move; /* Cursor để chỉ ra có thể drag */
+  user-select: none; /* Không cho select text khi drag */
+}
+
+.settings-pack-item:hover {
+  background: var(--settings-item-bg-hover);
+  border-color: var(--settings-text-secondary);
+}
+
+.settings-pack-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.settings-pack-item.drag-over {
+  position: relative;
+}
+
+/* Thanh ngang indicator khi drag over - hiển thị ở trên item */
+.settings-pack-item.drag-over::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #4682c8;
+  border-radius: 2px;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(70, 130, 200, 0.6);
+  animation: dragIndicatorPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes dragIndicatorPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scaleY(1.1);
+  }
+}
+
+.settings-pack-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--settings-input-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-pack-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.settings-pack-fallback {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--settings-text-primary);
+  text-transform: uppercase;
+}
+
+.settings-pack-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-pack-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--settings-text-primary);
+}
+
+.settings-pack-count {
+  font-size: 12px;
+  color: var(--settings-text-secondary);
+}
+
+.settings-pack-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: grab;
+  color: var(--settings-text-tertiary);
+  transition: color 0.2s;
+}
+
+.settings-pack-item:hover .settings-pack-drag-handle {
+  color: var(--settings-text-secondary);
+}
+
+.settings-pack-item:active .settings-pack-drag-handle {
+  cursor: grabbing;
+}
+
+.settings-pack-drag-icon {
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Loading */
+.settings-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--settings-text-secondary);
+  font-size: 14px;
+}
+
+.settings-saving {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 8px 16px;
+  background: var(--settings-pack-bg);
+  border: 1px solid var(--settings-pack-border);
+  border-radius: 4px;
+  color: var(--settings-text-primary);
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

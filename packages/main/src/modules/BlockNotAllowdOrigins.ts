@@ -21,7 +21,14 @@ export class BlockNotAllowedOrigins extends AbstractSecurityRule {
   applyRule(contents: Electron.WebContents): Promise<void> | void {
 
     contents.on('will-navigate', (event, url) => {
-      const {origin} = new URL(url);
+      const urlObj = new URL(url);
+      
+      // Cho phép custom protocols (như sticker://)
+      if (!urlObj.protocol.startsWith('http')) {
+        return; // Allow non-http protocols (file://, sticker://, etc.)
+      }
+      
+      const {origin} = urlObj;
       if (this.#allowedOrigins.has(origin)) {
         return;
       }
