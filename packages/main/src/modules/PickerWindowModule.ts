@@ -3,6 +3,7 @@ import { ModuleContext } from "../ModuleContext.js";
 import { BrowserWindow, globalShortcut, screen } from "electron";
 import type { AppInitConfig } from "../AppInitConfig.js";
 import { getAppIconPath } from "../utils/getAppIconPath.js";
+import { loadRenderer } from "../utils/loadRenderer.js";
 
 /**
  * Module quản lý cửa sổ Picker (Popup).
@@ -127,12 +128,8 @@ class PickerWindowModule implements AppModule {
       },
     });
 
-    // Load renderer (sẽ load component Picker)
-    if (this.#renderer instanceof URL) {
-      this.#pickerWindow.loadURL(this.#renderer.href + "#picker");
-    } else {
-      this.#pickerWindow.loadFile(this.#renderer.path, { hash: "picker" });
-    }
+    // Load renderer với hash "#picker" và fallback mechanism
+    loadRenderer(this.#pickerWindow, this.#renderer, "#picker");
 
     // Với focusable: false, blur event không hoạt động
     // ESC được xử lý bằng global shortcut

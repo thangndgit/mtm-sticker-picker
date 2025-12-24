@@ -241,57 +241,19 @@ class IPCHandlersModule implements AppModule {
         const isGif = ext === ".gif";
 
         if (isGif) {
-          // Với GIF động: Electron's nativeImage chỉ hỗ trợ frame đầu tiên
-          // Sử dụng electron-clipboard-ex để copy file trực tiếp vào clipboard
-          // Điều này giữ được animation của GIF
-          try {
-            // Normalize path để đảm bảo format đúng
-            const normalizedPath = resolve(fullStickerPath);
-
-            // Kiểm tra platform hỗ trợ
-            if (process.platform === "win32" || process.platform === "darwin") {
-              // Windows và macOS: Sử dụng electron-clipboard-ex để copy file
-              // Thư viện này hỗ trợ CF_HDROP trên Windows và file paths trên macOS
-              const clipboardExModule = await getClipboardEx();
-              if (clipboardExModule) {
-                clipboardExModule.writeFilePaths([normalizedPath]);
-              } else {
-                throw new Error("electron-clipboard-ex not available");
-              }
-
-              // Đợi một chút để đảm bảo clipboard được set
-              await new Promise((resolve) => setTimeout(resolve, 50));
-            } else {
-              // Linux: electron-clipboard-ex không hỗ trợ, chỉ có thể copy frame đầu tiên
-              console.warn(
-                `[IPC] Linux không hỗ trợ copy file vào clipboard, sẽ copy frame đầu tiên của GIF`
-              );
-              const gifBuffer = await readFile(fullStickerPath);
-              const pngBuffer = await sharp(gifBuffer, { animated: false })
-                .png()
-                .toBuffer();
-              const image = nativeImage.createFromBuffer(pngBuffer);
-              if (image.isEmpty()) {
-                throw new Error(
-                  `Failed to convert GIF to PNG from path: ${fullStickerPath}`
-                );
-              }
-              clipboard.writeImage(image);
-            }
-          } catch (clipboardExError) {
-            // Fallback: Nếu electron-clipboard-ex lỗi, thử copy như image
-            console.warn(
-              `[IPC] Failed to copy GIF file to clipboard via electron-clipboard-ex, trying image fallback:`,
-              clipboardExError
-            );
+          // Với GIF động: Xử lý khác nhau tùy platform
+          if (process.platform === "darwin") {
+            // macOS: Nhiều apps (Discord, Slack, Messages) chỉ nhận image data, không nhận file paths
+            // Luôn copy image data vào clipboard để đảm bảo tương thích
             try {
               const gifBuffer = await readFile(fullStickerPath);
-              // Thử copy GIF buffer trực tiếp (có thể hoạt động với một số ứng dụng)
+              // Thử copy GIF buffer trực tiếp (một số apps có thể hỗ trợ)
               const image = nativeImage.createFromBuffer(gifBuffer);
               if (!image.isEmpty()) {
                 clipboard.writeImage(image);
+                console.log(`[IPC] Copied GIF image data to clipboard (macOS)`);
               } else {
-                // Fallback cuối cùng: Convert frame đầu tiên sang PNG
+                // Fallback: Convert frame đầu tiên sang PNG
                 const pngBuffer = await sharp(gifBuffer, { animated: false })
                   .png()
                   .toBuffer();
@@ -302,25 +264,67 @@ class IPCHandlersModule implements AppModule {
                   );
                 }
                 clipboard.writeImage(pngImage);
+                console.log(`[IPC] Copied GIF first frame as PNG to clipboard (macOS)`);
               }
-            } catch (fallbackError) {
+            } catch (error) {
               throw new Error(
-                `Failed to copy GIF file to clipboard: ${fullStickerPath}. ` +
-                  `electron-clipboard-ex error: ${
-                    clipboardExError instanceof Error
-                      ? clipboardExError.message
-                      : String(clipboardExError)
-                  }. ` +
-                  `Fallback error: ${
-                    fallbackError instanceof Error
-                      ? fallbackError.message
-                      : String(fallbackError)
-                  }`
+                `Failed to copy GIF to clipboard on macOS: ${fullStickerPath}. ` +
+                  `Error: ${error instanceof Error ? error.message : String(error)}`
               );
             }
+          } else if (process.platform === "win32") {
+            // Windows: Sử dụng electron-clipboard-ex để copy file (giữ animation)
+            try {
+              const normalizedPath = resolve(fullStickerPath);
+              const clipboardExModule = await getClipboardEx();
+              if (clipboardExModule) {
+                clipboardExModule.writeFilePaths([normalizedPath]);
+                console.log(`[IPC] Copied GIF file path to clipboard (Windows)`);
+              } else {
+                throw new Error("electron-clipboard-ex not available");
+              }
+            } catch (clipboardExError) {
+              // Fallback: Copy image data
+              console.warn(
+                `[IPC] Failed to copy GIF file via electron-clipboard-ex, trying image fallback:`,
+                clipboardExError
+              );
+              const gifBuffer = await readFile(fullStickerPath);
+              const image = nativeImage.createFromBuffer(gifBuffer);
+              if (image.isEmpty()) {
+                const pngBuffer = await sharp(gifBuffer, { animated: false })
+                  .png()
+                  .toBuffer();
+                const pngImage = nativeImage.createFromBuffer(pngBuffer);
+                if (pngImage.isEmpty()) {
+                  throw new Error(
+                    `Failed to load GIF image from path: ${fullStickerPath}`
+                  );
+                }
+                clipboard.writeImage(pngImage);
+              } else {
+                clipboard.writeImage(image);
+              }
+            }
+          } else {
+            // Linux: electron-clipboard-ex không hỗ trợ, chỉ có thể copy frame đầu tiên
+            console.warn(
+              `[IPC] Linux không hỗ trợ copy file vào clipboard, sẽ copy frame đầu tiên của GIF`
+            );
+            const gifBuffer = await readFile(fullStickerPath);
+            const pngBuffer = await sharp(gifBuffer, { animated: false })
+              .png()
+              .toBuffer();
+            const image = nativeImage.createFromBuffer(pngBuffer);
+            if (image.isEmpty()) {
+              throw new Error(
+                `Failed to convert GIF to PNG from path: ${fullStickerPath}`
+              );
+            }
+            clipboard.writeImage(image);
           }
         } else {
-          // Với các format khác (PNG, JPG, etc): Sử dụng nativeImage như cũ
+          // Với các format khác (PNG, JPG, etc): Sử dụng nativeImage
           const image = nativeImage.createFromPath(fullStickerPath);
           if (image.isEmpty()) {
             throw new Error(
@@ -345,11 +349,27 @@ class IPCHandlersModule implements AppModule {
           });
         }
 
-        // 5. Delay ngắn để đảm bảo clipboard được set hoàn toàn trước khi paste
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        // 5. Delay để đảm bảo clipboard được set hoàn toàn trước khi paste
+        // macOS cần delay lâu hơn để clipboard được set đúng
+        const delay = process.platform === "darwin" ? 100 : 50;
+        await new Promise((resolve) => setTimeout(resolve, delay));
 
         // 6. Simulate Paste (window vẫn hiển thị nhưng không có focus nên paste vào input)
-        await KeyboardSimulator.simulatePaste();
+        try {
+          await KeyboardSimulator.simulatePaste();
+        } catch (keyboardError) {
+          console.error(
+            `[IPC] Error simulating paste:`,
+            keyboardError
+          );
+          // Trên macOS, có thể cần Accessibility permissions
+          if (process.platform === "darwin") {
+            console.warn(
+              `[IPC] Paste simulation failed. Please check Accessibility permissions in System Preferences > Security & Privacy > Privacy > Accessibility`
+            );
+          }
+          // Không throw error để app vẫn hoạt động (user có thể paste thủ công)
+        }
 
         // 7. Sau khi paste xong, ẩn picker window (để user thấy kết quả trước)
         const pickerWindow = getPickerWindow();

@@ -65,3 +65,30 @@ for (const pkg of packagesToStart) {
     ],
   });
 }
+
+/**
+ * Cleanup handler khi dev script terminate (Ctrl+C, SIGTERM, etc.)
+ */
+async function cleanup() {
+  console.log('\n[DevMode] Cleaning up...');
+  try {
+    if (rendererWatchServer) {
+      await rendererWatchServer.close();
+    }
+  } catch (error) {
+    console.error('[DevMode] Error during cleanup:', error);
+  }
+  process.exit(0);
+}
+
+// Register cleanup handlers
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+process.on('exit', () => {
+  // Sync cleanup on exit
+  if (rendererWatchServer) {
+    rendererWatchServer.close().catch(() => {
+      // Ignore errors during exit
+    });
+  }
+});

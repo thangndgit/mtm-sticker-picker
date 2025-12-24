@@ -4,6 +4,7 @@ import { Tray, Menu, nativeImage, app, BrowserWindow } from "electron";
 import { ApplicationTerminatorOnLastWindowClose } from "./ApplicationTerminatorOnLastWindowClose.js";
 import type { AppInitConfig } from "../AppInitConfig.js";
 import { getAppIconPath } from "../utils/getAppIconPath.js";
+import { loadRenderer } from "../utils/loadRenderer.js";
 
 /**
  * Module quản lý System Tray và Menu.
@@ -46,9 +47,39 @@ class SystemTrayModule implements AppModule {
       {
         label: "Quit",
         click: () => {
-          // Gán isQuitting = true và gọi app.quit()
+          // Gán isQuitting = true
           ApplicationTerminatorOnLastWindowClose.isQuitting = true;
+          
+          // Đóng tất cả windows trước khi quit
+          // Điều này đảm bảo window-all-closed event được trigger
+          const allWindows = BrowserWindow.getAllWindows();
+          allWindows.forEach((window) => {
+            if (!window.isDestroyed()) {
+              // Remove preventDefault handlers nếu có
+              window.removeAllListeners("close");
+              window.destroy();
+            }
+          });
+          
+          // Đảm bảo Settings window được destroy
+          if (this.#settingsWindow && !this.#settingsWindow.isDestroyed()) {
+            this.#settingsWindow.removeAllListeners("close");
+            this.#settingsWindow.destroy();
+            this.#settingsWindow = null;
+          }
+          
+          // Sau đó quit app
           app.quit();
+          
+          // Force quit sau 2 giây nếu app vẫn chưa quit (fallback)
+          setTimeout(() => {
+            // Kiểm tra xem process còn chạy không
+            try {
+              process.exit(0);
+            } catch (e) {
+              // Ignore errors
+            }
+          }, 2000);
         },
       },
     ]);
@@ -112,16 +143,17 @@ class SystemTrayModule implements AppModule {
       },
     });
 
-    // Load renderer
-    if (this.#renderer instanceof URL) {
-      this.#settingsWindow.loadURL(this.#renderer.href);
-    } else {
-      this.#settingsWindow.loadFile(this.#renderer.path);
-    }
+    // Load renderer với fallback mechanism
+    loadRenderer(this.#settingsWindow, this.#renderer);
 
-    // Xử lý nút đóng (X): Ẩn thay vì destroy
+    // Xử lý nút đóng (X): Ẩn thay vì destroy (trừ khi app đang quit)
     this.#settingsWindow.on("close", (event) => {
-      // Ngăn chặn đóng cửa sổ
+      // Nếu app đang quit, cho phép đóng cửa sổ bình thường
+      if (ApplicationTerminatorOnLastWindowClose.isQuitting) {
+        // Không preventDefault - cho phép window đóng và destroy
+        return;
+      }
+      // Ngăn chặn đóng cửa sổ (chỉ ẩn)
       event.preventDefault();
       // Ẩn cửa sổ thay vì destroy
       this.#settingsWindow?.hide();
