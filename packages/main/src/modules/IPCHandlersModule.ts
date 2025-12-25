@@ -243,34 +243,44 @@ class IPCHandlersModule implements AppModule {
         if (isGif) {
           // Với GIF động: Xử lý khác nhau tùy platform
           if (process.platform === "darwin") {
-            // macOS: Nhiều apps (Discord, Slack, Messages) chỉ nhận image data, không nhận file paths
-            // Luôn copy image data vào clipboard để đảm bảo tương thích
+            // macOS: Sử dụng electron-clipboard-ex để copy file (giữ animation)
+            // Fallback về image data nếu electron-clipboard-ex không available hoặc fail
             try {
-              const gifBuffer = await readFile(fullStickerPath);
-              // Thử copy GIF buffer trực tiếp (một số apps có thể hỗ trợ)
-              const image = nativeImage.createFromBuffer(gifBuffer);
-              if (!image.isEmpty()) {
-                clipboard.writeImage(image);
-                console.log(`[IPC] Copied GIF image data to clipboard (macOS)`);
+              const normalizedPath = resolve(fullStickerPath);
+              const clipboardExModule = await getClipboardEx();
+              if (clipboardExModule) {
+                clipboardExModule.writeFilePaths([normalizedPath]);
+                console.log(`[IPC] Copied GIF file path to clipboard (macOS)`);
               } else {
-                // Fallback: Convert frame đầu tiên sang PNG
+                throw new Error("electron-clipboard-ex not available");
+              }
+            } catch (clipboardExError) {
+              // Fallback: Copy image data (frame đầu tiên) cho apps không hỗ trợ file paths
+              console.warn(
+                `[IPC] Failed to copy GIF file via electron-clipboard-ex, trying image fallback:`,
+                clipboardExError
+              );
+              try {
+                const gifBuffer = await readFile(fullStickerPath);
+                // Convert frame đầu tiên sang PNG để đảm bảo tương thích
                 const pngBuffer = await sharp(gifBuffer, { animated: false })
                   .png()
                   .toBuffer();
                 const pngImage = nativeImage.createFromBuffer(pngBuffer);
                 if (pngImage.isEmpty()) {
                   throw new Error(
-                    `Failed to load GIF image from path: ${fullStickerPath}`
+                    `Failed to convert GIF to PNG from path: ${fullStickerPath}`
                   );
                 }
                 clipboard.writeImage(pngImage);
-                console.log(`[IPC] Copied GIF first frame as PNG to clipboard (macOS)`);
+                console.log(`[IPC] Copied GIF first frame as PNG to clipboard (macOS fallback)`);
+              } catch (imageError) {
+                throw new Error(
+                  `Failed to copy GIF to clipboard on macOS: ${fullStickerPath}. ` +
+                    `ClipboardEx error: ${clipboardExError instanceof Error ? clipboardExError.message : String(clipboardExError)}. ` +
+                    `Image fallback error: ${imageError instanceof Error ? imageError.message : String(imageError)}`
+                );
               }
-            } catch (error) {
-              throw new Error(
-                `Failed to copy GIF to clipboard on macOS: ${fullStickerPath}. ` +
-                  `Error: ${error instanceof Error ? error.message : String(error)}`
-              );
             }
           } else if (process.platform === "win32") {
             // Windows: Sử dụng electron-clipboard-ex để copy file (giữ animation)
@@ -351,10 +361,20 @@ class IPCHandlersModule implements AppModule {
 
         // 5. Delay để đảm bảo clipboard được set hoàn toàn trước khi paste
         // macOS cần delay lâu hơn để clipboard được set đúng
-        const delay = process.platform === "darwin" ? 100 : 50;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        const clipboardDelay = process.platform === "darwin" ? 100 : 50;
+        await new Promise((resolve) => setTimeout(resolve, clipboardDelay));
 
-        // 6. Simulate Paste (window vẫn hiển thị nhưng không có focus nên paste vào input)
+        // 6. Ẩn picker window TRƯỚC KHI paste để đảm bảo focus trở về input đích
+        const pickerWindow = getPickerWindow();
+        if (pickerWindow && !pickerWindow.isDestroyed() && pickerWindow.isVisible()) {
+          pickerWindow.hide();
+          // Đợi một chút để window được ẩn hoàn toàn và focus trở về input đích
+          // macOS cần delay lâu hơn để focus được restore đúng
+          const focusDelay = process.platform === "darwin" ? 100 : 50;
+          await new Promise((resolve) => setTimeout(resolve, focusDelay));
+        }
+
+        // 7. Simulate Paste - bây giờ input đích đã có focus lại
         try {
           await KeyboardSimulator.simulatePaste();
         } catch (keyboardError) {
@@ -369,12 +389,6 @@ class IPCHandlersModule implements AppModule {
             );
           }
           // Không throw error để app vẫn hoạt động (user có thể paste thủ công)
-        }
-
-        // 7. Sau khi paste xong, ẩn picker window (để user thấy kết quả trước)
-        const pickerWindow = getPickerWindow();
-        if (pickerWindow && !pickerWindow.isDestroyed()) {
-          pickerWindow.hide();
         }
 
         return { success: true };

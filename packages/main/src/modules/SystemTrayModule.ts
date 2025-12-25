@@ -5,6 +5,8 @@ import { ApplicationTerminatorOnLastWindowClose } from "./ApplicationTerminatorO
 import type { AppInitConfig } from "../AppInitConfig.js";
 import { getAppIconPath } from "../utils/getAppIconPath.js";
 import { loadRenderer } from "../utils/loadRenderer.js";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 
 /**
  * Module quản lý System Tray và Menu.
@@ -29,7 +31,14 @@ class SystemTrayModule implements AppModule {
 
     // Lấy đường dẫn đến icon
     const iconPath = this.#getTrayIconPath();
-    const icon = nativeImage.createFromPath(iconPath);
+    let icon = nativeImage.createFromPath(iconPath);
+
+    // Resize icon để phù hợp với system tray
+    // macOS: 22x22 (Retina: 44x44), Windows/Linux: 16x16
+    const traySize = process.platform === "darwin" ? 22 : 16;
+    if (icon.getSize().width !== traySize) {
+      icon = icon.resize({ width: traySize, height: traySize });
+    }
 
     // Tạo Tray icon
     this.#tray = new Tray(icon);
@@ -49,7 +58,7 @@ class SystemTrayModule implements AppModule {
         click: () => {
           // Gán isQuitting = true
           ApplicationTerminatorOnLastWindowClose.isQuitting = true;
-          
+
           // Đóng tất cả windows trước khi quit
           // Điều này đảm bảo window-all-closed event được trigger
           const allWindows = BrowserWindow.getAllWindows();
@@ -60,17 +69,17 @@ class SystemTrayModule implements AppModule {
               window.destroy();
             }
           });
-          
+
           // Đảm bảo Settings window được destroy
           if (this.#settingsWindow && !this.#settingsWindow.isDestroyed()) {
             this.#settingsWindow.removeAllListeners("close");
             this.#settingsWindow.destroy();
             this.#settingsWindow = null;
           }
-          
+
           // Sau đó quit app
           app.quit();
-          
+
           // Force quit sau 2 giây nếu app vẫn chưa quit (fallback)
           setTimeout(() => {
             // Kiểm tra xem process còn chạy không
@@ -173,10 +182,39 @@ class SystemTrayModule implements AppModule {
 
   /**
    * Lấy đường dẫn đến Tray icon.
-   * Sử dụng icon từ folder icons ở root project.
+   * Sử dụng icon nhỏ (16x16 hoặc 32x32) từ folder icons để phù hợp với system tray.
    */
   #getTrayIconPath(): string {
-    return getAppIconPath();
+    const appPath = app.getAppPath();
+
+    let iconPath: string;
+
+    if (import.meta.env.DEV) {
+      // Development: Tìm từ thư mục hiện tại (dist) lên root
+      const appDir = dirname(fileURLToPath(import.meta.url));
+      // Từ dist/modules/ lên root: dist/modules -> dist -> packages -> root
+      const iconsPath = join(appDir, "..", "..", "..", "icons");
+
+      // Sử dụng favicon-32x32.png hoặc favicon-16x16.png cho tray icon
+      if (process.platform === "win32") {
+        iconPath = join(iconsPath, "favicon.ico");
+      } else {
+        // macOS và Linux: dùng favicon-32x32.png (sẽ resize về 22x22 hoặc 16x16)
+        iconPath = join(iconsPath, "favicon-32x32.png");
+      }
+    } else {
+      // Production: Tìm trong resources/icons (từ extraResources)
+      const resourcesPath = process.resourcesPath || appPath;
+      const iconsPath = join(resourcesPath, "icons");
+
+      if (process.platform === "win32") {
+        iconPath = join(iconsPath, "favicon.ico");
+      } else {
+        iconPath = join(iconsPath, "favicon-32x32.png");
+      }
+    }
+
+    return iconPath;
   }
 
   /**
